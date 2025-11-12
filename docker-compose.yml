@@ -1,0 +1,9 @@
+services:
+  web:
+    build: .
+    command: npm run start
+    ports:
+      - "8600:8080"
+    volumes:
+      - .:/app
+    restart: unless-stopped

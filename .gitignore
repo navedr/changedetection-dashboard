@@ -1,0 +1,19 @@
+.idea/*
+.DS_Store
+node_modules/*
+config.json
+dist/*
+dist-server/*
+
+# Environment variables
+.env
+
+# SQLite database
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# Data folder (keep structure, ignore database files)
+data/*
+
