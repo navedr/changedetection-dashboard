@@ -87,9 +87,6 @@ const startWebServer = async () => {
     app.use(bodyParser.json({ limit: "50mb" }));
     app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 
-    // Webhook endpoint without auth (must be before auth middleware)
-    app.post("/api/webhook", webhook);
-
     // Apply auth to all other routes
     app.use(auth);
 

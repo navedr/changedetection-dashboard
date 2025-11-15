@@ -2,11 +2,14 @@ import { AppDataSource } from "../database/data-source";
 import { ChangeEvent } from "../entities/ChangeEvent";
 import { Watcher } from "../entities/Watcher";
 import path from "path";
+import { WebhookRequest } from "./interface";
 
 export const registerRoutes = (app: any, projectRoot: string) => {
     app.get("/", function (req, res) {
         res.sendFile(path.join(projectRoot, "dist", "index.html"));
     });
+
+    app.post("/api/webhook", webhook);
 
     // Get all watchers with their latest change
     app.get("/api/watchers", async (req, res) => {
@@ -88,14 +91,17 @@ export const registerRoutes = (app: any, projectRoot: string) => {
 
 export const webhook = async (req: any, res: any) => {
     try {
-        console.log("Received webhook data");
-        const webhookData = Array.isArray(req.body) ? req.body[0] : req.body;
+        console.log("Received webhook data", req.body);
+        const webhookData: WebhookRequest = Array.isArray(req.body) ? req.body[0] : req.body;
 
-        const body = webhookData.body;
+        const body = webhookData;
         const url = body.title; // The URL is in the title field
 
         // Extract URLs from message
         const messageLinks = extractLinksFromMessage(body.message);
+
+        // Extract old and new values from message
+        const values = extractValues(body.message);
 
         // Find or create watcher
         const watcherRepo = AppDataSource.getRepository(Watcher);
@@ -120,6 +126,8 @@ export const webhook = async (req: any, res: any) => {
             watchUrl: messageLinks.watchUrl,
             editUrl: messageLinks.editUrl,
             changeType: body.type,
+            oldValue: values.oldValue,
+            newValue: values.newValue,
             screenshotBase64: body.attachments?.[0]?.base64,
             screenshotMimetype: body.attachments?.[0]?.mimetype,
             webhookData: JSON.stringify(webhookData),
@@ -150,6 +158,25 @@ function extractLinksFromMessage(message: string): { watchUrl?: string; diffUrl?
     // Extract Edit URL
     const editMatch = message.match(/\[Edit\]\((.*?)\)/);
     if (editMatch) result.editUrl = editMatch[1];
+
+    return result;
+}
+
+// Helper function to extract old and new values from message
+function extractValues(message: string): { oldValue?: string; newValue?: string } {
+    const result: { oldValue?: string; newValue?: string } = {};
+
+    // Extract old value from <del> tags
+    const oldMatch = message.match(/<del>(.*?)<\/del>/);
+    if (oldMatch) {
+        result.oldValue = oldMatch[1].trim();
+    }
+
+    // Extract new value from ** tags that come after <del>
+    const newMatch = message.match(/<\/del>\s*\n\*\*(.*?)\*\*/);
+    if (newMatch) {
+        result.newValue = newMatch[1].trim();
+    }
 
     return result;
 }

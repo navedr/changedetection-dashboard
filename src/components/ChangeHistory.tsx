@@ -10,6 +10,8 @@ interface ChangeEvent {
     screenshotBase64: string | null;
     screenshotMimetype: string | null;
     changeType: string | null;
+    oldValue: string | null;
+    newValue: string | null;
     createdAt: string;
 }
 
@@ -115,14 +117,7 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
                                 onClick={() => setSelectedChange(change)}>
                                 <div className="d-flex w-100 justify-content-between">
                                     <small>{formatDate(change.createdAt)}</small>
-                                    {change.changeType && (
-                                        <span
-                                            className={`badge bg-${
-                                                change.changeType === "info" ? "primary" : "warning"
-                                            }`}>
-                                            {change.changeType}
-                                        </span>
-                                    )}
+                                    {change.newValue}
                                 </div>
                             </button>
                         ))}
@@ -138,6 +133,45 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
                                 <small className="text-muted">{formatDate(selectedChange.createdAt)}</small>
                             </div>
                             <div className="card-body">
+                                {/* Value Comparison Section */}
+                                {(selectedChange.oldValue || selectedChange.newValue) && (
+                                    <div className="mb-4">
+                                        <h6 className="mb-3">Value Change:</h6>
+                                        <div className="row g-3">
+                                            {selectedChange.oldValue && (
+                                                <div className="col-md-6">
+                                                    <div className="card bg-light border-danger">
+                                                        <div className="card-body">
+                                                            <small className="text-muted d-block mb-2">
+                                                                <i className="bi bi-dash-circle text-danger"></i> Old
+                                                                Value
+                                                            </small>
+                                                            <div className="fs-4 text-danger text-decoration-line-through">
+                                                                {selectedChange.oldValue}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {selectedChange.newValue && (
+                                                <div className="col-md-6">
+                                                    <div className="card bg-light border-success">
+                                                        <div className="card-body">
+                                                            <small className="text-muted d-block mb-2">
+                                                                <i className="bi bi-check-circle text-success"></i> New
+                                                                Value
+                                                            </small>
+                                                            <div className="fs-4 text-success fw-bold">
+                                                                {selectedChange.newValue}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="mb-3">
                                     <h6>Changes Detected:</h6>
                                     <div dangerouslySetInnerHTML={renderMarkdown(selectedChange.message)} />

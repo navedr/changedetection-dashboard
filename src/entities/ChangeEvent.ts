@@ -38,6 +38,12 @@ export class ChangeEvent {
     changeType: string;
 
     @Column({ type: "text", nullable: true })
+    oldValue: string; // Value before change (inside <del> tags)
+
+    @Column({ type: "text", nullable: true })
+    newValue: string; // Value after change (inside ** tags)
+
+    @Column({ type: "text", nullable: true })
     webhookData: string; // Store raw webhook data as JSON
 
     @CreateDateColumn()
