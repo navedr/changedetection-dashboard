@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "notyf/notyf.min.css";
-import { DryUXProvider, ErrorBoundary } from "dry-ux";
+import { DryUXProvider, ErrorBoundary, useSearchParams } from "dry-ux";
 import WatcherList from "./WatcherList";
 import ChangeHistory from "./ChangeHistory";
 
 const App = React.memo(() => {
-    const [selectedWatcherId, setSelectedWatcherId] = useState<number | null>(null);
+    const { params, setParam, clearParams } = useSearchParams<{ watcher: number }>();
 
     return (
         <ErrorBoundary>
@@ -14,14 +14,11 @@ const App = React.memo(() => {
                 <div className="container-fluid py-4">
                     <div className="row">
                         <div className="col-12">
-                            <h1 className="mb-4">ChangeDetection.io Dashboard</h1>
-                            {selectedWatcherId === null ? (
-                                <WatcherList onSelectWatcher={setSelectedWatcherId} />
+                            <h3 className="mb-4">ChangeDetection.io Dashboard</h3>
+                            {!params.watcher ? (
+                                <WatcherList onSelectWatcher={id => setParam("watcher", id)} />
                             ) : (
-                                <ChangeHistory
-                                    watcherId={selectedWatcherId}
-                                    onBack={() => setSelectedWatcherId(null)}
-                                />
+                                <ChangeHistory watcherId={params.watcher} onBack={() => clearParams("watcher")} />
                             )}
                         </div>
                     </div>

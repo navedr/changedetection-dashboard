@@ -90,7 +90,14 @@ const WatcherList: React.FC<WatcherListProps> = ({ onSelectWatcher }) => {
                                     {watcher.changeCount} {watcher.changeCount === 1 ? "change" : "changes"}
                                 </small>
                             </div>
-                            <p className="mb-1 text-truncate">
+                            <p
+                                className="mb-1 text-truncate"
+                                style={{
+                                    maxWidth: "600px",
+                                    textOverflow: "ellipsis",
+                                    overflow: "hidden",
+                                    whiteSpace: "nowrap",
+                                }}>
                                 <small className="text-muted">{watcher.url}</small>
                             </p>
                             {watcher.latestChange && (

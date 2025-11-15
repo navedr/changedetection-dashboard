@@ -2820,7 +2820,7 @@ dotenv@^17.2.3:
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-17.2.3.tgz#ad995d6997f639b11065f419a22fabf567cdb9a2"
   integrity sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==
 
-dry-ux@^1.74.0:
+dry-ux@^1.76.0:
   version "1.76.0"
   resolved "https://registry.yarnpkg.com/dry-ux/-/dry-ux-1.76.0.tgz#0d7a19cd73bd9116199c5fd89ce0e2321c7a2f05"
   integrity sha512-ZvucQNRmJAstNeaC/bzyWeZM/wup79P2SrtH9N2VV3di2i378xXPB+Zv4Q9JPrNgWgkrxHRAZegW9x2Ok6QWGA==

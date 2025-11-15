@@ -100,7 +100,13 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
                     <i className="bi bi-arrow-left"></i> Back to Watchers
                 </button>
                 <h2>{watcher.title}</h2>
-                <p className="text-muted">{watcher.url}</p>
+                <p
+                    className="text-muted"
+                    style={{ maxWidth: "600px", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
+                    <a href={watcher.url} target={`_blank`} rel="noopener noreferrer">
+                        {watcher.url}
+                    </a>
+                </p>
             </div>
 
             <div className="row">

@@ -95,10 +95,10 @@ export const webhook = async (req: any, res: any) => {
         const webhookData: WebhookRequest = Array.isArray(req.body) ? req.body[0] : req.body;
 
         const body = webhookData;
-        const url = body.title; // The URL is in the title field
 
         // Extract URLs from message
         const messageLinks = extractLinksFromMessage(body.message);
+        const url = messageLinks.watchUrl; // The URL is in the title field
 
         // Extract old and new values from message
         const values = extractValues(body.message);
@@ -110,7 +110,7 @@ export const webhook = async (req: any, res: any) => {
         if (!watcher) {
             watcher = watcherRepo.create({
                 url,
-                title: url,
+                title: body.title,
             });
             await watcherRepo.save(watcher);
             console.log("Created new watcher:", url);
