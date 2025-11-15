@@ -95,25 +95,24 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
 
     return (
         <div>
-            <div className="mb-4">
-                <button className="btn btn-secondary mb-3" onClick={onBack}>
-                    <i className="bi bi-arrow-left"></i> Back to Watchers
+            <div className="mb-3 mb-md-4">
+                <button className="btn btn-secondary btn-sm mb-2 mb-md-3" onClick={onBack}>
+                    <i className="bi bi-arrow-left"></i> <span className="d-none d-sm-inline">Back to Watchers</span>
+                    <span className="d-inline d-sm-none">Back</span>
                 </button>
-                <h2>{watcher.title}</h2>
-                <p
-                    className="text-muted"
-                    style={{ maxWidth: "600px", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
+                <h2 className="fs-4 fs-md-3">{watcher.title}</h2>
+                <p className="text-muted small text-truncate" style={{ maxWidth: "100%" }}>
                     <a href={watcher.url} target={`_blank`} rel="noopener noreferrer">
                         {watcher.url}
                     </a>
                 </p>
             </div>
 
-            <div className="row">
+            <div className="row g-3">
                 {/* Change list */}
-                <div className="col-md-4">
-                    <h4 className="mb-3">Change History ({watcher.changes.length})</h4>
-                    <div className="list-group" style={{ maxHeight: "70vh", overflowY: "auto" }}>
+                <div className="col-12 col-lg-4">
+                    <h4 className="mb-2 mb-md-3 fs-5 fs-md-4">Change History ({watcher.changes.length})</h4>
+                    <div className="list-group" style={{ maxHeight: "50vh", overflowY: "auto" }}>
                         {watcher.changes.map(change => (
                             <button
                                 key={change.id}
@@ -121,9 +120,9 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
                                     selectedChange?.id === change.id ? "active" : ""
                                 }`}
                                 onClick={() => setSelectedChange(change)}>
-                                <div className="d-flex w-100 justify-content-between">
-                                    <small>{formatDate(change.createdAt)}</small>
-                                    {change.newValue}
+                                <div className="d-flex w-100 justify-content-between align-items-start gap-2 flex-wrap">
+                                    <small className="text-nowrap">{formatDate(change.createdAt)}</small>
+                                    <span className="text-truncate">{change.newValue}</span>
                                 </div>
                             </button>
                         ))}
@@ -131,7 +130,7 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
                 </div>
 
                 {/* Change detail */}
-                <div className="col-md-8">
+                <div className="col-12 col-lg-8">
                     {selectedChange ? (
                         <div className="card">
                             <div className="card-header">
@@ -143,16 +142,16 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
                                 {(selectedChange.oldValue || selectedChange.newValue) && (
                                     <div className="mb-4">
                                         <h6 className="mb-3">Value Change:</h6>
-                                        <div className="row g-3">
+                                        <div className="row g-2 g-md-3">
                                             {selectedChange.oldValue && (
-                                                <div className="col-md-6">
+                                                <div className="col-12 col-md-6">
                                                     <div className="card bg-light border-danger">
-                                                        <div className="card-body">
+                                                        <div className="card-body p-2 p-md-3">
                                                             <small className="text-muted d-block mb-2">
                                                                 <i className="bi bi-dash-circle text-danger"></i> Old
                                                                 Value
                                                             </small>
-                                                            <div className="fs-4 text-danger text-decoration-line-through">
+                                                            <div className="fs-5 fs-md-4 text-danger text-decoration-line-through">
                                                                 {selectedChange.oldValue}
                                                             </div>
                                                         </div>
@@ -160,14 +159,14 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
                                                 </div>
                                             )}
                                             {selectedChange.newValue && (
-                                                <div className="col-md-6">
+                                                <div className="col-12 col-md-6">
                                                     <div className="card bg-light border-success">
-                                                        <div className="card-body">
+                                                        <div className="card-body p-2 p-md-3">
                                                             <small className="text-muted d-block mb-2">
                                                                 <i className="bi bi-check-circle text-success"></i> New
                                                                 Value
                                                             </small>
-                                                            <div className="fs-4 text-success fw-bold">
+                                                            <div className="fs-5 fs-md-4 text-success fw-bold">
                                                                 {selectedChange.newValue}
                                                             </div>
                                                         </div>
@@ -190,19 +189,20 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
                                             src={`data:${selectedChange.screenshotMimetype};base64,${selectedChange.screenshotBase64}`}
                                             alt="Screenshot"
                                             className="img-fluid border rounded"
-                                            style={{ maxHeight: "400px" }}
+                                            style={{ maxHeight: "400px", width: "100%", objectFit: "contain" }}
                                         />
                                     </div>
                                 )}
 
-                                <div className="d-flex gap-2">
+                                <div className="d-flex gap-2 flex-wrap">
                                     {selectedChange.watchUrl && (
                                         <a
                                             href={selectedChange.watchUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="btn btn-primary btn-sm">
-                                            <i className="bi bi-eye"></i> Watch URL
+                                            <i className="bi bi-eye"></i>{" "}
+                                            <span className="d-none d-sm-inline">Watch URL</span>
                                         </a>
                                     )}
                                     {selectedChange.diffUrl && (
@@ -211,7 +211,8 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="btn btn-info btn-sm">
-                                            <i className="bi bi-file-diff"></i> View Diff
+                                            <i className="bi bi-file-diff"></i>{" "}
+                                            <span className="d-none d-sm-inline">View Diff</span>
                                         </a>
                                     )}
                                     {selectedChange.editUrl && (
@@ -220,7 +221,8 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="btn btn-secondary btn-sm">
-                                            <i className="bi bi-pencil"></i> Edit
+                                            <i className="bi bi-pencil"></i>{" "}
+                                            <span className="d-none d-sm-inline">Edit</span>
                                         </a>
                                     )}
                                 </div>

@@ -1,0 +1,165 @@
+/* Responsive styles for ChangeDetection Dashboard */
+
+/* Mobile-first responsive adjustments */
+@media (max-width: 767.98px) {
+    /* Reduce padding on mobile */
+    .container-fluid {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+
+    /* Improve list item spacing on mobile */
+    .list-group-item {
+        padding: 0.75rem !important;
+    }
+
+    /* Better card padding on mobile */
+    .card-body {
+        padding: 0.75rem;
+    }
+
+    /* Stack buttons vertically on very small screens */
+    .btn-group-mobile {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .btn-group-mobile .btn {
+        width: 100%;
+    }
+
+    /* Adjust font sizes for mobile readability */
+    h1, .h1 {
+        font-size: 1.75rem;
+    }
+
+    h2, .h2 {
+        font-size: 1.5rem;
+    }
+
+    h3, .h3 {
+        font-size: 1.25rem;
+    }
+
+    h4, .h4 {
+        font-size: 1.1rem;
+    }
+
+    h5, .h5 {
+        font-size: 1rem;
+    }
+
+    /* Improve table responsiveness */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Better modal on mobile */
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+
+    /* Adjust alert spacing */
+    .alert {
+        padding: 0.75rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Tablet adjustments */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+/* Ensure images don't overflow on any device */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Improve touch targets on mobile */
+@media (max-width: 767.98px) {
+    .btn-sm {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    /* Minimum touch target size */
+    .btn, .list-group-item-action {
+        min-height: 44px;
+    }
+}
+
+/* Horizontal scrolling for overflow content */
+.overflow-auto-mobile {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Text truncation utilities */
+.text-truncate-mobile {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 767.98px) {
+    .text-truncate-mobile {
+        max-width: 200px;
+    }
+}
+
+/* Responsive spacing utilities */
+@media (max-width: 767.98px) {
+    .gap-mobile {
+        gap: 0.5rem !important;
+    }
+}
+
+/* Better scrolling for change history */
+.change-list-scroll {
+    max-height: 50vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 768px) {
+    .change-list-scroll {
+        max-height: 70vh;
+    }
+}
+
+/* Improve card layout on mobile */
+@media (max-width: 767.98px) {
+    .card {
+        margin-bottom: 1rem;
+    }
+
+    .card-header {
+        padding: 0.75rem;
+    }
+}
+
+/* Better visibility for delete button */
+.btn-danger {
+    opacity: 0.9;
+}
+
+.btn-danger:hover {
+    opacity: 1;
+}
+
+/* Ensure proper minimum width for content */
+.min-w-0 {
+    min-width: 0;
+}
+
+/* Prevent content overflow */
+* {
+    box-sizing: border-box;
+}
+

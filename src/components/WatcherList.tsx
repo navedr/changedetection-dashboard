@@ -44,6 +44,31 @@ const WatcherList: React.FC<WatcherListProps> = ({ onSelectWatcher }) => {
         }
     };
 
+    const deleteWatcher = async (watcherId: number, watcherTitle: string) => {
+        if (
+            !confirm(
+                `Are you sure you want to delete "${watcherTitle}"? This will also delete all associated change history.`,
+            )
+        ) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/watchers/${watcherId}`, {
+                method: "DELETE",
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to delete watcher");
+            }
+
+            // Refresh the list after successful deletion
+            await fetchWatchers();
+        } catch (err) {
+            setError((err as Error).message);
+        }
+    };
+
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleString();
     };
@@ -68,10 +93,10 @@ const WatcherList: React.FC<WatcherListProps> = ({ onSelectWatcher }) => {
 
     return (
         <div>
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <h2>Watchers</h2>
-                <button className="btn btn-primary" onClick={fetchWatchers}>
-                    <i className="bi bi-arrow-clockwise"></i> Refresh
+            <div className="d-flex justify-content-between align-items-center mb-3 mb-md-4 flex-wrap gap-2">
+                <h2 className="fs-3 fs-md-2 mb-0">Watchers</h2>
+                <button className="btn btn-primary btn-sm" onClick={fetchWatchers}>
+                    <i className="bi bi-arrow-clockwise"></i> <span className="d-none d-sm-inline">Refresh</span>
                 </button>
             </div>
 
@@ -80,32 +105,47 @@ const WatcherList: React.FC<WatcherListProps> = ({ onSelectWatcher }) => {
             ) : (
                 <div className="list-group">
                     {watchers.map(watcher => (
-                        <button
+                        <div
                             key={watcher.id}
-                            className="list-group-item list-group-item-action"
-                            onClick={() => onSelectWatcher(watcher.id)}>
-                            <div className="d-flex w-100 justify-content-between">
-                                <h5 className="mb-1 text-truncate">{watcher.title}</h5>
-                                <small className="text-muted">
-                                    {watcher.changeCount} {watcher.changeCount === 1 ? "change" : "changes"}
-                                </small>
+                            className="list-group-item list-group-item-action d-flex justify-content-between align-items-start gap-2"
+                            style={{ cursor: "pointer" }}>
+                            <div
+                                className="flex-grow-1 min-w-0"
+                                style={{ maxWidth: "80%" }}
+                                onClick={() => onSelectWatcher(watcher.id)}>
+                                <div className="d-flex w-100 justify-content-between flex-wrap gap-1">
+                                    <h5 className="mb-1 text-truncate fs-6 fs-md-5">{watcher.title}</h5>
+                                    <small className="text-muted text-nowrap">
+                                        {watcher.changeCount} {watcher.changeCount === 1 ? "change" : "changes"}
+                                    </small>
+                                </div>
+                                <p
+                                    className="mb-1 text-truncate small"
+                                    style={{
+                                        maxWidth: "100%",
+                                        textOverflow: "ellipsis",
+                                        overflow: "hidden",
+                                        whiteSpace: "nowrap",
+                                    }}>
+                                    <small className="text-muted">{watcher.url}</small>
+                                </p>
+                                {watcher.latestChange && (
+                                    <small className="text-muted d-block">
+                                        Latest: {formatDate(watcher.latestChange.createdAt)}
+                                    </small>
+                                )}
                             </div>
-                            <p
-                                className="mb-1 text-truncate"
-                                style={{
-                                    maxWidth: "600px",
-                                    textOverflow: "ellipsis",
-                                    overflow: "hidden",
-                                    whiteSpace: "nowrap",
-                                }}>
-                                <small className="text-muted">{watcher.url}</small>
-                            </p>
-                            {watcher.latestChange && (
-                                <small className="text-muted">
-                                    Latest: {formatDate(watcher.latestChange.createdAt)}
-                                </small>
-                            )}
-                        </button>
+                            <button
+                                className="btn btn-sm btn-danger flex-shrink-0"
+                                onClick={e => {
+                                    e.stopPropagation();
+                                    deleteWatcher(watcher.id, watcher.title);
+                                }}
+                                title="Delete watcher"
+                                style={{ alignSelf: "center" }}>
+                                <i className="bi bi-trash"></i>
+                            </button>
+                        </div>
                     ))}
                 </div>
             )}

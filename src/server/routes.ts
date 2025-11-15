@@ -87,6 +87,35 @@ export const registerRoutes = (app: any, projectRoot: string) => {
             res.status(500).json({ error: (error as Error).message });
         }
     });
+
+    // Delete a watcher and all its associated changes
+    app.delete("/api/watchers/:id", async (req, res) => {
+        try {
+            const watcherId = parseInt(req.params.id);
+            const watcherRepo = AppDataSource.getRepository(Watcher);
+            const changeEventRepo = AppDataSource.getRepository(ChangeEvent);
+
+            // Check if watcher exists
+            const watcher = await watcherRepo.findOne({
+                where: { id: watcherId },
+            });
+
+            if (!watcher) {
+                return res.status(404).json({ error: "Watcher not found" });
+            }
+
+            // Delete all associated change events first
+            await changeEventRepo.delete({ watcherId });
+
+            // Delete the watcher
+            await watcherRepo.delete({ id: watcherId });
+
+            res.json({ success: true, message: "Watcher and associated changes deleted successfully" });
+        } catch (error) {
+            console.error("Error deleting watcher:", error);
+            res.status(500).json({ error: (error as Error).message });
+        }
+    });
 };
 
 export const webhook = async (req: any, res: any) => {
