@@ -16,7 +16,15 @@ const App = React.memo(() => {
                 <div className="container-fluid py-3 py-md-4 px-2 px-md-3">
                     <div className="row">
                         <div className="col-12">
-                            <h3 className="mb-3 mb-md-4 fs-4 fs-md-3">ChangeDetection.io Dashboard</h3>
+                            <div className="gradient-header mb-3 mb-md-4">
+                                <h3 className="mb-0 fs-4 fs-md-3">
+                                    <i className="bi bi-speedometer2 me-2"></i>
+                                    ChangeDetection.io Dashboard
+                                </h3>
+                                <small style={{ color: "rgba(0, 0, 0, 0.8)" }}>
+                                    Monitor website changes in real-time
+                                </small>
+                            </div>
                             {!params.watcher ? (
                                 <WatcherList onSelectWatcher={id => setParam("watcher", id)} />
                             ) : (
