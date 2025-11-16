@@ -82,8 +82,6 @@ The dashboard supports optional password-based authentication:
   - Dashboard is accessible without login
   - No authentication required
 
-For detailed authentication documentation, see [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md)
-
 ---
 
 
@@ -143,24 +141,6 @@ services:
     depends_on:
       - changedetection
 ```
-
----
-
-## Documentation
-
-- **[API Migration Guide](./docs/API_MIGRATION.md)** - Details about the architecture change from webhook to API
-- **[ChangeDetection.io API Docs](https://changedetection.io/docs/api_v1/index.html)** - Official API documentation
-
-## Migrating from Webhook Version
-
-If you're upgrading from the previous webhook-based version:
-
-1. **No data migration needed** - The new version fetches data directly from ChangeDetection.io
-2. **Remove webhook configuration** - You no longer need to configure webhooks in ChangeDetection.io
-3. **Update environment variables** - Add `CHANGEDETECTION_URL` and `CHANGEDETECTION_API_KEY`
-4. **Remove database files** - The `data/` directory is no longer needed
-
-See the [API Migration Guide](./docs/API_MIGRATION.md) for complete details.
 
 ---
 
