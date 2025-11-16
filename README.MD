@@ -21,18 +21,22 @@ Ensure you have the following installed on your system:
 
 ---
 
-## Local Docker Build
+
+## Local Publish
 
 ```shell
   # Build with author and version information
-  docker build --platform linux/amd64 -t ecarone-aws-manager .
+  docker build --platform linux/amd64 -t changedetection-dashboard .
 
   # Tag for registry with author namespace
-  docker tag ecarone-aws-manager apps.ecar1.us:3030/ecarone-aws-manager:latest
+  docker tag changedetection-dashboard 192.168.68.168:3030/changedetection-dashboard:latest
 
   # Push to registry
-  docker push apps.ecar1.us:3030/ecarone-aws-manager:latest
-  
-  # Run the container
-#  docker run -p 8080:8080 -v ./config.json:/app/config.json ecarone-aws-manager
+  docker push 192.168.68.168:3030/changedetection-dashboard:latest
+```
+
+## Local Build and Run
+```shell
+  docker build --platform linux/amd64 -t changedetection-dashboard . && \
+  docker run -p 8080:8080 -v ./data:/app/data changedetection-dashboard
 ```

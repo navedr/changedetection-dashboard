@@ -18,7 +18,6 @@ COPY webpack.config.js ./
 COPY webpack.prod.js ./
 
 COPY src/ ./src/
-COPY public/ ./public/
 
 # Build for production
 RUN npm run build:ci

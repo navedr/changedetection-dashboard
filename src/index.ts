@@ -1,5 +1,4 @@
 "use strict";
-import "reflect-metadata";
 import dotenv from "dotenv";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs";
@@ -34,7 +33,7 @@ const auth = function (req, res, next) {
 
 let projectRoot: string | null = null;
 
-function getProjectRoot(): string {
+export function getProjectRoot(): string {
     // Return cached result if available
     if (projectRoot) {
         return projectRoot;
