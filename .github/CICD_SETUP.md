@@ -7,7 +7,7 @@ This guide explains how to set up automated Docker image building and publishing
 The GitHub Actions workflow (`.github/workflows/docker-publish.yml`) automatically:
 - Builds a Docker image on every push to main/master branch
 - Pushes the image to Docker Hub with appropriate tags
-- Supports multi-architecture builds (amd64 and arm64)
+- Builds for linux/amd64 architecture (ARM64 can be enabled if needed)
 - Uses GitHub Actions cache to speed up builds
 
 ## Prerequisites
@@ -129,10 +129,39 @@ env:
 
 ### Build for Specific Architectures
 
-By default, the workflow builds for both `linux/amd64` and `linux/arm64`. To change this, modify the `platforms` in the workflow:
+By default, the workflow builds only for `linux/amd64` to avoid ARM64 emulation issues during npm install. 
+
+**To enable ARM64 builds**, you have several options:
+
+**Option 1: Use GitHub's ARM64 runners (Recommended)**
+
+If you have access to GitHub's ARM64 runners, update the workflow:
 
 ```yaml
-platforms: linux/amd64  # Only build for amd64
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest-arm64  # Use ARM64 runner
+    # ... rest of config
+    platforms: linux/amd64,linux/arm64
+```
+
+**Option 2: Use native ARM64 build approach**
+
+Modify the Dockerfile to use a separate build strategy for ARM64:
+
+```dockerfile
+# Add before npm install
+RUN if [ "$(uname -m)" = "aarch64" ]; then \
+      npm config set foreground-scripts true; \
+    fi
+```
+
+**Option 3: Build only for amd64 (Current default)**
+
+Keep the current configuration - most users run on amd64 systems:
+
+```yaml
+platforms: linux/amd64
 ```
 
 ### Disable Pull Request Builds
@@ -174,11 +203,37 @@ pull_request:
 
 ### Multi-arch Build Fails
 
-**Problem**: Build fails for arm64 architecture
+**Problem**: Build fails with "ERROR: failed to build: exit code: 132" on ARM64
 
-**Solution**: Some dependencies might not support arm64. You can:
-1. Build only for amd64: Change `platforms: linux/amd64`
-2. Fix arm64 compatibility in your application dependencies
+This occurs when npm install runs under QEMU emulation (x86_64 host building for ARM64). Exit code 132 indicates an illegal instruction error.
+
+**Solutions**:
+
+1. **Build only for amd64** (Current default - recommended):
+   ```yaml
+   platforms: linux/amd64
+   ```
+
+2. **Use GitHub ARM64 runners** (if available):
+   ```yaml
+   runs-on: ubuntu-latest-arm64
+   platforms: linux/amd64,linux/arm64
+   ```
+
+3. **Split the build into separate jobs**:
+   ```yaml
+   strategy:
+     matrix:
+       platform: [linux/amd64, linux/arm64]
+   runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-latest-arm64' || 'ubuntu-latest' }}
+   ```
+
+4. **Optimize Dockerfile for cross-compilation**:
+   - Use `npm ci` instead of `npm install` for more reliable builds
+   - Add `--ignore-scripts` flag if native modules cause issues
+   - Use Node.js Alpine images which are smaller and more reliable
+
+**Note**: Most production deployments run on amd64, so building only for amd64 is often sufficient.
 
 ## Security Best Practices
 

@@ -147,7 +147,7 @@ Tags are automatically generated for:
 - `v1.0.0` - Semantic version tags (when pushing version tags)
 - `v1.0`, `v1` - Major and minor version tags
 
-The workflow builds multi-architecture images supporting both `linux/amd64` and `linux/arm64`.
+The workflow builds for `linux/amd64` architecture. See `.github/CICD_SETUP.md` for instructions on enabling ARM64 builds if needed.
 
 ---
 
