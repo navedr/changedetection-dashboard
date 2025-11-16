@@ -5,29 +5,31 @@ import fs from "node:fs";
 import express from "express";
 import bodyParser from "body-parser";
 import path from "path";
-import basicAuth from "basic-auth";
+import session from "express-session";
+import cookieParser from "cookie-parser";
 import { registerRoutes } from "./server/routes";
 
 // Load environment variables
 dotenv.config();
 
-// Get auth credentials from environment variables
-const AUTH_USERNAME = process.env.AUTH_USERNAME || "admin";
-const AUTH_PASSWORD = process.env.AUTH_PASSWORD || "password";
+// Get password from environment variable
+const PASSWORD = process.env.PASSWORD;
+const SESSION_SECRET = process.env.SESSION_SECRET || "changedetection-secret-" + Math.random().toString(36);
 
-const auth = function (req, res, next) {
-    var user = basicAuth(req);
-    if (!user || !user.name || !user.pass) {
-        res.set("WWW-Authenticate", "Basic realm=Authorization Required");
-        res.sendStatus(401);
-        return;
+// Authentication middleware - only enforces auth if PASSWORD env var is set
+const requireAuth = function (req, res, next) {
+    // If no PASSWORD is set, allow access
+    if (!PASSWORD) {
+        return next();
     }
-    if (user.name === AUTH_USERNAME && user.pass === AUTH_PASSWORD) {
-        next();
-    } else {
-        res.set("WWW-Authenticate", "Basic realm=Authorization Required");
-        res.sendStatus(401);
+
+    // Check if user is authenticated
+    if (req.session && req.session.authenticated) {
+        return next();
     }
+
+    // Not authenticated - redirect to login page
+    res.redirect("/login");
 };
 
 let projectRoot: string | null = null;
@@ -76,19 +78,38 @@ const startWebServer = async () => {
     app.use(bodyParser.json({ limit: "50mb" }));
     app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 
-    // Apply auth to all routes
-    app.use(auth);
+    // Cookie parser
+    app.use(cookieParser());
+
+    // Session middleware
+    app.use(
+        session({
+            secret: SESSION_SECRET,
+            resave: false,
+            saveUninitialized: false,
+            cookie: {
+                secure: false, // set to true if using HTTPS
+                httpOnly: true,
+                maxAge: 24 * 60 * 60 * 1000, // 24 hours
+            },
+        }),
+    );
+
+    // Register API routes (includes login/logout endpoints)
+    registerRoutes(app, getProjectRoot(), PASSWORD, requireAuth);
 
     // Set Static path
     app.use(express.static(path.join(getProjectRoot(), "dist")));
-
-    // Register API routes
-    registerRoutes(app, getProjectRoot());
 
     // Start server
     app.listen(port, function () {
         console.log("Server started on port " + port);
         console.log("ChangeDetection API URL:", process.env.CHANGEDETECTION_URL || "http://localhost:5000");
+        if (PASSWORD) {
+            console.log("Authentication enabled - PASSWORD is set");
+        } else {
+            console.log("Authentication disabled - no PASSWORD environment variable set");
+        }
     });
 };
 

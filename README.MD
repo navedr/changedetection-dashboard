@@ -14,7 +14,7 @@ It runs as a Node.js application with React as frontend and Express as backend, 
 - 📸 **Snapshot Viewer** - View historical snapshots
 - 🗑️ **Watcher Management** - Delete watchers directly from dashboard
 - 🔄 **Manual Triggers** - Trigger checks on-demand (future feature)
-- 🔒 **Basic Auth** - Secure your dashboard with username/password
+- 🔒 **Optional Authentication** - Secure your dashboard with password-based login
 - 🚀 **Stateless** - No database needed, all data from ChangeDetection.io API
 
 ## Architecture
@@ -43,9 +43,11 @@ Create a `.env` file in the project root with the following variables:
 CHANGEDETECTION_URL=http://localhost:5000
 CHANGEDETECTION_API_KEY=your-api-key-here
 
-# Dashboard Authentication
-AUTH_USERNAME=admin
-AUTH_PASSWORD=password
+# Dashboard Authentication (optional - leave empty to disable)
+PASSWORD=your_secure_password
+
+# Session Secret (optional - auto-generated if not set)
+SESSION_SECRET=your_session_secret
 
 # Server Port (optional)
 PORT=8080
@@ -66,6 +68,21 @@ PORT=8080
    ```bash
    npm run dev
    ```
+
+## Authentication
+
+The dashboard supports optional password-based authentication:
+
+- **With Authentication**: Set the `PASSWORD` environment variable
+  - Users will be redirected to a login page
+  - Sessions are valid for 24 hours
+  - A logout button appears in the header
+  
+- **Without Authentication**: Leave `PASSWORD` empty or unset
+  - Dashboard is accessible without login
+  - No authentication required
+
+For detailed authentication documentation, see [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md)
 
 ---
 
@@ -89,10 +106,11 @@ PORT=8080
   docker run -p 8080:8080 \
     -e CHANGEDETECTION_URL=http://your-changedetection-host:5000 \
     -e CHANGEDETECTION_API_KEY=your-api-key-here \
-    -e AUTH_USERNAME=admin \
-    -e AUTH_PASSWORD=password \
+    -e PASSWORD=your_secure_password \
     changedetection-dashboard
 ```
+
+**Note**: The `PASSWORD` environment variable is optional. If not set, the dashboard will run without authentication.
 
 ## Using with Docker Compose
 

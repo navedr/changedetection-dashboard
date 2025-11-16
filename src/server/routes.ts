@@ -1,13 +1,64 @@
 import path from "path";
 import { changeDetectionAPI } from "./changedetection-api";
 
-export const registerRoutes = (app: any, projectRoot: string) => {
-    app.get("/", function (req, res) {
+export const registerRoutes = (app: any, projectRoot: string, password: string | undefined, requireAuth: any) => {
+    // Login page route - accessible without auth
+    app.get("/login", function (req, res) {
+        // If already authenticated, redirect to home
+        if (req.session && req.session.authenticated) {
+            return res.redirect("/");
+        }
+        // If no password is set, redirect to home (auth disabled)
+        if (!password) {
+            return res.redirect("/");
+        }
+        res.sendFile(path.join(projectRoot, "dist", "login.html"));
+    });
+
+    // Login API endpoint
+    app.post("/api/login", function (req, res) {
+        const { password: inputPassword } = req.body;
+
+        // If no password is configured, deny login
+        if (!password) {
+            return res.status(400).json({ error: "Authentication is not enabled" });
+        }
+
+        // Check password
+        if (inputPassword === password) {
+            req.session.authenticated = true;
+            res.json({ success: true });
+        } else {
+            res.status(401).json({ error: "Invalid password" });
+        }
+    });
+
+    // Logout API endpoint
+    app.post("/api/logout", function (req, res) {
+        req.session.destroy(err => {
+            if (err) {
+                console.error("Error destroying session:", err);
+                return res.status(500).json({ error: "Failed to logout" });
+            }
+            res.json({ success: true });
+        });
+    });
+
+    // Check auth status
+    app.get("/api/auth/status", function (req, res) {
+        res.json({
+            authenticated: !password || (req.session && req.session.authenticated),
+            authEnabled: !!password,
+        });
+    });
+
+    // Main app route - protected by auth
+    app.get("/", requireAuth, function (req, res) {
         res.sendFile(path.join(projectRoot, "dist", "index.html"));
     });
 
     // Get all watchers with their latest change
-    app.get("/api/watchers", async (req, res) => {
+    app.get("/api/watchers", requireAuth, async (req, res) => {
         try {
             const watchers = await changeDetectionAPI.getAllWatchers();
             res.json(watchers);
@@ -18,7 +69,7 @@ export const registerRoutes = (app: any, projectRoot: string) => {
     });
 
     // Get a specific watcher with all changes
-    app.get("/api/watchers/:id", async (req, res) => {
+    app.get("/api/watchers/:id", requireAuth, async (req, res) => {
         try {
             const watcherId = req.params.id;
             const watcher = await changeDetectionAPI.getWatcher(watcherId);
@@ -30,7 +81,7 @@ export const registerRoutes = (app: any, projectRoot: string) => {
     });
 
     // Get latest snapshot preview for a watcher (for list view)
-    app.get("/api/watchers/:id/preview", async (req, res) => {
+    app.get("/api/watchers/:id/preview", requireAuth, async (req, res) => {
         try {
             const watcherId = req.params.id;
             const watcher = await changeDetectionAPI.getWatcher(watcherId);
@@ -58,7 +109,7 @@ export const registerRoutes = (app: any, projectRoot: string) => {
     });
 
     // Get snapshot content for a specific change
-    app.get("/api/snapshot/:watcherId/:timestamp", async (req, res) => {
+    app.get("/api/snapshot/:watcherId/:timestamp", requireAuth, async (req, res) => {
         try {
             const { watcherId, timestamp } = req.params;
             const snapshot = await changeDetectionAPI.getSnapshot(watcherId, timestamp);
@@ -70,7 +121,7 @@ export const registerRoutes = (app: any, projectRoot: string) => {
     });
 
     // Get diff for a specific change
-    app.get("/api/diff/:watcherId/:timestamp", async (req, res) => {
+    app.get("/api/diff/:watcherId/:timestamp", requireAuth, async (req, res) => {
         try {
             const { watcherId, timestamp } = req.params;
             const diff = await changeDetectionAPI.getDiff(watcherId, timestamp);
@@ -82,7 +133,7 @@ export const registerRoutes = (app: any, projectRoot: string) => {
     });
 
     // Delete a watcher
-    app.delete("/api/watchers/:id", async (req, res) => {
+    app.delete("/api/watchers/:id", requireAuth, async (req, res) => {
         try {
             const watcherId = req.params.id;
             await changeDetectionAPI.deleteWatcher(watcherId);
@@ -94,7 +145,7 @@ export const registerRoutes = (app: any, projectRoot: string) => {
     });
 
     // Trigger a check for a specific watcher
-    app.post("/api/watchers/:id/trigger", async (req, res) => {
+    app.post("/api/watchers/:id/trigger", requireAuth, async (req, res) => {
         try {
             const watcherId = req.params.id;
             await changeDetectionAPI.triggerCheck(watcherId);
@@ -106,7 +157,7 @@ export const registerRoutes = (app: any, projectRoot: string) => {
     });
 
     // Get system info
-    app.get("/api/systeminfo", async (req, res) => {
+    app.get("/api/systeminfo", requireAuth, async (req, res) => {
         try {
             const systemInfo = await changeDetectionAPI.getSystemInfo();
             res.json(systemInfo);

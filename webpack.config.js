@@ -5,7 +5,10 @@ const { WebpackManifestPlugin } = require("webpack-manifest-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 module.exports = {
-    entry: "./src/main.js",
+    entry: {
+        main: "./src/main.js",
+        login: "./src/login.tsx",
+    },
     output: {
         path: path.resolve(__dirname, "./dist"),
         chunkFilename: "[name].js",
@@ -100,6 +103,13 @@ module.exports = {
             hash: true,
             filename: "./index.html",
             template: "./src/index.html",
+            chunks: ["main", "vendor", "runtime"],
+        }),
+        new HtmlWebpackPlugin({
+            hash: true,
+            filename: "./login.html",
+            template: "./src/login.html",
+            chunks: ["login", "vendor", "runtime"],
         }),
     ],
 };
