@@ -1,9 +1,13 @@
 services:
   web:
     build: .
-    command: npm run start
+    command: npm run start:server
     ports:
-      - "8600:8080"
-    volumes:
-      - .:/app
+      - "8080:8080"
+    environment:
+      - CHANGEDETECTION_URL=${CHANGEDETECTION_URL:-http://localhost:5000}
+      - CHANGEDETECTION_API_KEY=${CHANGEDETECTION_API_KEY}
+      - AUTH_USERNAME=${AUTH_USERNAME:-admin}
+      - AUTH_PASSWORD=${AUTH_PASSWORD:-password}
+      - PORT=8080
     restart: unless-stopped

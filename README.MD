@@ -1,11 +1,56 @@
 # Change Detection Dashboard
-This project runs NodeJS application with React as frontend and NodeJS as backend. Follow the steps below to set up and run the project locally.
+
+This project is a dashboard for [ChangeDetection.io](https://changedetection.io) that provides a clean interface to view and manage your website watchers using the ChangeDetection.io API.
+
+It runs as a Node.js application with React as frontend and Express as backend, making live API calls to your ChangeDetection.io instance.
 
 ---
 
+## Features
+
+- 📊 **Live Dashboard** - Real-time view of all your watchers
+- 📈 **Change History** - View complete history for each watcher
+- 🔍 **Diff Viewer** - See what changed between snapshots
+- 📸 **Snapshot Viewer** - View historical snapshots
+- 🗑️ **Watcher Management** - Delete watchers directly from dashboard
+- 🔄 **Manual Triggers** - Trigger checks on-demand (future feature)
+- 🔒 **Basic Auth** - Secure your dashboard with username/password
+- 🚀 **Stateless** - No database needed, all data from ChangeDetection.io API
+
+## Architecture
+
+This dashboard uses a **stateless, API-first architecture**:
+- Makes live API calls to ChangeDetection.io
+- No local database or data storage
+- Direct integration with ChangeDetection.io API
+- Real-time data synchronization
+
 ## Prerequisites
-Ensure you have the following installed on your system:
+
+Ensure you have the following:
 - Node.js (>= 20.x)
+- A running ChangeDetection.io instance (local or remote)
+- API key from your ChangeDetection.io instance ([How to find your API key](https://changedetection.io/docs/api_v1/index.html#section/ChangeDetection.io-Web-page-monitoring-and-notifications-API/Where-to-find-my-API-key))
+
+---
+
+## Configuration
+
+Create a `.env` file in the project root with the following variables:
+
+```bash
+# ChangeDetection.io Configuration
+CHANGEDETECTION_URL=http://localhost:5000
+CHANGEDETECTION_API_KEY=your-api-key-here
+
+# Dashboard Authentication
+AUTH_USERNAME=admin
+AUTH_PASSWORD=password
+
+# Server Port (optional)
+PORT=8080
+```
+
 ---
 
 ## Setup
@@ -14,7 +59,10 @@ Ensure you have the following installed on your system:
    ```bash
    npm install --legacy-peer-deps
    ```
-2. Start the React development server:
+
+2. Configure your environment variables (see Configuration section above)
+
+3. Start the development server:
    ```bash
    npm run dev
    ```
@@ -38,5 +86,90 @@ Ensure you have the following installed on your system:
 ## Local Build and Run
 ```shell
   docker build --platform linux/amd64 -t changedetection-dashboard . && \
-  docker run -p 8080:8080 -v ./data:/app/data changedetection-dashboard
+  docker run -p 8080:8080 \
+    -e CHANGEDETECTION_URL=http://your-changedetection-host:5000 \
+    -e CHANGEDETECTION_API_KEY=your-api-key-here \
+    -e AUTH_USERNAME=admin \
+    -e AUTH_PASSWORD=password \
+    changedetection-dashboard
 ```
+
+## Using with Docker Compose
+
+You can also use Docker Compose to run both ChangeDetection.io and the dashboard together. Update your `docker-compose.yml`:
+
+```yaml
+version: '3'
+services:
+  changedetection:
+    image: ghcr.io/dgtlmoon/changedetection.io
+    container_name: changedetection
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./changedetection-data:/datastore
+    environment:
+      - PUID=1000
+      - PGID=1000
+
+  dashboard:
+    image: changedetection-dashboard
+    container_name: changedetection-dashboard
+    ports:
+      - "8080:8080"
+    environment:
+      - CHANGEDETECTION_URL=http://changedetection:5000
+      - CHANGEDETECTION_API_KEY=your-api-key-here
+      - AUTH_USERNAME=admin
+      - AUTH_PASSWORD=password
+    depends_on:
+      - changedetection
+```
+
+---
+
+## Documentation
+
+- **[API Migration Guide](./docs/API_MIGRATION.md)** - Details about the architecture change from webhook to API
+- **[ChangeDetection.io API Docs](https://changedetection.io/docs/api_v1/index.html)** - Official API documentation
+
+## Migrating from Webhook Version
+
+If you're upgrading from the previous webhook-based version:
+
+1. **No data migration needed** - The new version fetches data directly from ChangeDetection.io
+2. **Remove webhook configuration** - You no longer need to configure webhooks in ChangeDetection.io
+3. **Update environment variables** - Add `CHANGEDETECTION_URL` and `CHANGEDETECTION_API_KEY`
+4. **Remove database files** - The `data/` directory is no longer needed
+
+See the [API Migration Guide](./docs/API_MIGRATION.md) for complete details.
+
+---
+
+## Troubleshooting
+
+### Cannot connect to ChangeDetection.io
+- Verify `CHANGEDETECTION_URL` is correct and accessible
+- Check that ChangeDetection.io is running
+- Ensure network connectivity between dashboard and ChangeDetection.io
+
+### API Authentication Failed
+- Verify `CHANGEDETECTION_API_KEY` is correct
+- Check that the API key is still valid in ChangeDetection.io settings
+- Ensure API access is enabled in your ChangeDetection.io instance
+
+### No watchers appearing
+- Verify watchers exist in ChangeDetection.io
+- Check that watchers have been checked at least once
+- Review browser console for any API errors
+
+---
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+ISC
+

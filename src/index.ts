@@ -6,8 +6,7 @@ import express from "express";
 import bodyParser from "body-parser";
 import path from "path";
 import basicAuth from "basic-auth";
-import { AppDataSource } from "./database/data-source";
-import { registerRoutes, webhook } from "./server/routes";
+import { registerRoutes } from "./server/routes";
 
 // Load environment variables
 dotenv.config();
@@ -63,15 +62,6 @@ export function getProjectRoot(): string {
 let app;
 
 const startWebServer = async () => {
-    // Initialize database
-    try {
-        await AppDataSource.initialize();
-        console.log("Database connection initialized");
-    } catch (error) {
-        console.error("Error during database initialization:", error);
-        process.exit(1);
-    }
-
     const port = parseInt(process.env.PORT || "8080", 10);
     app = express();
 
@@ -82,21 +72,24 @@ const startWebServer = async () => {
 
     app.use(logger);
 
-    // Body Parser Middleware (before auth for webhook endpoint)
+    // Body Parser Middleware
     app.use(bodyParser.json({ limit: "50mb" }));
     app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 
-    // Apply auth to all other routes
+    // Apply auth to all routes
     app.use(auth);
 
     // Set Static path
     app.use(express.static(path.join(getProjectRoot(), "dist")));
 
-    // Use nodemon library to auto restart
+    // Register API routes
+    registerRoutes(app, getProjectRoot());
+
+    // Start server
     app.listen(port, function () {
         console.log("Server started on port " + port);
+        console.log("ChangeDetection API URL:", process.env.CHANGEDETECTION_URL || "http://localhost:5000");
     });
 };
 
 await startWebServer();
-registerRoutes(app, getProjectRoot());

@@ -1,31 +1,23 @@
 import React, { useState, useEffect } from "react";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
 interface ChangeEvent {
-    id: number;
-    title: string;
-    message: string;
-    diffUrl: string | null;
-    watchUrl: string | null;
-    editUrl: string | null;
-    screenshotBase64: string | null;
-    screenshotMimetype: string | null;
-    changeType: string | null;
-    oldValue: string | null;
-    newValue: string | null;
+    id: string;
     createdAt: string;
+    timestamp: number;
+    size_total: number;
+    size_removed: number;
+    size_added: number;
 }
 
 interface Watcher {
-    id: number;
+    id: string;
     url: string;
     title: string;
     changes: ChangeEvent[];
 }
 
 interface ChangeHistoryProps {
-    watcherId: number;
+    watcherId: string;
     onBack: () => void;
 }
 
@@ -34,10 +26,76 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
     const [selectedChange, setSelectedChange] = useState<ChangeEvent | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [snapshotContent, setSnapshotContent] = useState<string | null>(null);
+    const [loadingSnapshot, setLoadingSnapshot] = useState(false);
+    const [showAllHistory, setShowAllHistory] = useState(false);
+    const [filteredChanges, setFilteredChanges] = useState<ChangeEvent[]>([]);
+    const [snapshotPreviews, setSnapshotPreviews] = useState<{ [key: string]: string }>({});
 
     useEffect(() => {
         fetchWatcherHistory();
     }, [watcherId]);
+
+    useEffect(() => {
+        if (selectedChange && watcher) {
+            fetchSnapshotContent();
+        }
+    }, [selectedChange]);
+
+    useEffect(() => {
+        if (watcher) {
+            // Show only recent changes by default (last 30 days or 50 changes, whichever is less)
+            if (showAllHistory) {
+                setFilteredChanges(watcher.changes);
+            } else {
+                // Calculate 30 days ago
+                const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+
+                // Filter to recent changes (within 30 days) OR take last 50
+                const recentChanges = watcher.changes.filter(change => change.timestamp * 1000 >= thirtyDaysAgo);
+
+                // If less than 10 changes in 30 days, take last 50 anyway
+                if (recentChanges.length < 10 && watcher.changes.length > recentChanges.length) {
+                    setFilteredChanges(watcher.changes.slice(0, 50));
+                } else {
+                    setFilteredChanges(recentChanges);
+                }
+            }
+        }
+    }, [watcher, showAllHistory]);
+
+    useEffect(() => {
+        // Fetch snapshot previews for all filtered changes
+        if (watcher && filteredChanges.length > 0) {
+            fetchAllSnapshotPreviews();
+        }
+    }, [filteredChanges]);
+
+    const fetchAllSnapshotPreviews = async () => {
+        if (!watcher) return;
+
+        // Fetch previews for all changes (limit to prevent too many requests)
+        const changesToFetch = filteredChanges.slice(0, 20); // Limit to first 20 for performance
+
+        for (const change of changesToFetch) {
+            // Skip if already fetched
+            if (snapshotPreviews[change.id]) continue;
+
+            try {
+                const response = await fetch(`/api/snapshot/${watcher.id}/${change.id}`);
+                if (response.ok) {
+                    const content = await response.text();
+                    // Store preview (first 200 chars)
+                    setSnapshotPreviews(prev => ({
+                        ...prev,
+                        [change.id]: content.substring(0, 300).trim(),
+                    }));
+                }
+            } catch (err) {
+                console.error(`Error fetching preview for ${change.id}:`, err);
+            }
+        }
+    };
 
     const fetchWatcherHistory = async () => {
         try {
@@ -56,6 +114,25 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
             setError((err as Error).message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchSnapshotContent = async () => {
+        if (!selectedChange || !watcher) return;
+
+        try {
+            setLoadingSnapshot(true);
+            const response = await fetch(`/api/snapshot/${watcher.id}/${selectedChange.id}`);
+            if (!response.ok) {
+                throw new Error("Failed to fetch snapshot");
+            }
+            const content = await response.text();
+            setSnapshotContent(content);
+        } catch (err) {
+            console.error("Error fetching snapshot:", err);
+            setSnapshotContent(null);
+        } finally {
+            setLoadingSnapshot(false);
         }
     };
 
@@ -121,28 +198,81 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
             <div className="row g-3">
                 {/* Change list */}
                 <div className="col-12 col-lg-4">
-                    <h4 className="mb-2 mb-md-3 fs-5 fs-md-4">
-                        <i className="bi bi-clock-history me-2" style={{ color: "#6366f1" }}></i>
-                        Change History ({watcher.changes.length})
-                    </h4>
+                    <div className="d-flex justify-content-between align-items-center mb-2 mb-md-3">
+                        <h4 className="mb-0 fs-5 fs-md-4">
+                            <i className="bi bi-clock-history me-2" style={{ color: "#6366f1" }}></i>
+                            Change History ({filteredChanges.length})
+                        </h4>
+                        {watcher.changes.length > filteredChanges.length && (
+                            <button
+                                className="btn btn-sm btn-outline-secondary"
+                                onClick={() => setShowAllHistory(!showAllHistory)}
+                                title={showAllHistory ? "Show recent only" : "Show all history"}>
+                                {showAllHistory ? (
+                                    <>
+                                        <i className="bi bi-funnel"></i>
+                                        <span className="d-none d-md-inline ms-1">Recent</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <i className="bi bi-list"></i>
+                                        <span className="d-none d-md-inline ms-1">All ({watcher.changes.length})</span>
+                                    </>
+                                )}
+                            </button>
+                        )}
+                    </div>
+                    {!showAllHistory && watcher.changes.length > filteredChanges.length && (
+                        <div className="alert alert-info small mb-2 py-2">
+                            <i className="bi bi-info-circle me-1"></i>
+                            Showing recent history for current URL. Click "All" to see complete history.
+                        </div>
+                    )}
                     <div className="list-group change-list-scroll">
-                        {watcher.changes.map(change => (
+                        {filteredChanges.map(change => (
                             <button
                                 key={change.id}
                                 className={`list-group-item list-group-item-action ${
                                     selectedChange?.id === change.id ? "active" : ""
                                 }`}
-                                onClick={() => setSelectedChange(change)}>
-                                <div className="d-flex w-100 justify-content-between align-items-start gap-2 flex-wrap">
+                                onClick={() => setSelectedChange(change)}
+                                style={{ textAlign: "left" }}>
+                                <div className="d-flex w-100 justify-content-between align-items-start gap-2 flex-wrap mb-2">
                                     <small className="text-nowrap">
                                         <i className="bi bi-calendar-event me-1"></i>
                                         {formatDate(change.createdAt)}
                                     </small>
-                                    <span className="text-truncate">
-                                        <i className="bi bi-arrow-right-circle me-1" style={{ color: "#10b981" }}></i>
-                                        {change.newValue}
-                                    </span>
+                                    {change.size_added > 0 || change.size_removed > 0 ? (
+                                        <span className="text-truncate">
+                                            {change.size_added > 0 && (
+                                                <span className="text-success me-2">
+                                                    <i className="bi bi-plus-circle"></i> {change.size_added}
+                                                </span>
+                                            )}
+                                            {change.size_removed > 0 && (
+                                                <span className="text-danger">
+                                                    <i className="bi bi-dash-circle"></i> {change.size_removed}
+                                                </span>
+                                            )}
+                                        </span>
+                                    ) : null}
                                 </div>
+                                {snapshotPreviews[change.id] && (
+                                    <div
+                                        className="small text-muted mt-1 p-2 rounded"
+                                        style={{
+                                            fontFamily: "monospace",
+                                            fontSize: "0.75rem",
+                                            backgroundColor: "rgba(0,0,0,0.05)",
+                                            whiteSpace: "pre-wrap",
+                                            wordBreak: "break-word",
+                                            maxHeight: "80px",
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                        }}>
+                                        {snapshotPreviews[change.id]}
+                                    </div>
+                                )}
                             </button>
                         ))}
                     </div>
@@ -163,95 +293,109 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
                                 </small>
                             </div>
                             <div className="card-body">
-                                {/* Value Comparison Section */}
-                                {(selectedChange.oldValue || selectedChange.newValue) && (
-                                    <div className="mb-2">
+                                {/* Change Statistics - Only show if we have data */}
+                                {(selectedChange.size_total > 0 ||
+                                    selectedChange.size_added > 0 ||
+                                    selectedChange.size_removed > 0) && (
+                                    <div className="mb-3">
                                         <div className="row g-2 g-md-3">
-                                            {selectedChange.oldValue && (
-                                                <div className="col-6">
-                                                    <div className="card bg-light border-danger mb-1">
-                                                        <div className="card-body p-2 p-md-3">
-                                                            <div className="fs-5 fs-md-4 text-danger text-decoration-line-through">
-                                                                {selectedChange.oldValue}
-                                                            </div>
+                                            <div className="col-4">
+                                                <div className="card bg-light">
+                                                    <div className="card-body p-2 p-md-3 text-center">
+                                                        <div className="text-muted small">Total Size</div>
+                                                        <div className="fs-6 fw-bold">{selectedChange.size_total}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="col-4">
+                                                <div className="card bg-light border-success">
+                                                    <div className="card-body p-2 p-md-3 text-center">
+                                                        <div className="text-success small">Added</div>
+                                                        <div className="fs-6 fw-bold text-success">
+                                                            +{selectedChange.size_added}
                                                         </div>
                                                     </div>
                                                 </div>
-                                            )}
-                                            {selectedChange.newValue && (
-                                                <div className="col-6">
-                                                    <div className="card bg-light border-success">
-                                                        <div className="card-body p-2 p-md-3">
-                                                            <div className="fs-5 fs-md-4 text-success fw-bold">
-                                                                {selectedChange.newValue}
-                                                            </div>
+                                            </div>
+                                            <div className="col-4">
+                                                <div className="card bg-light border-danger">
+                                                    <div className="card-body p-2 p-md-3 text-center">
+                                                        <div className="text-danger small">Removed</div>
+                                                        <div className="fs-6 fw-bold text-danger">
+                                                            -{selectedChange.size_removed}
                                                         </div>
                                                     </div>
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
                                     </div>
                                 )}
 
-                                <div className="mb-3">
-                                    <Markdown
-                                        remarkPlugins={[remarkGfm]}
-                                        components={{
-                                            a: ({ node, ...props }) => (
-                                                <a {...props} target="_blank" rel="noopener noreferrer" />
-                                            ),
-                                            h2: () => null,
-                                        }}>
-                                        {selectedChange.message}
-                                    </Markdown>
+                                {/* Info about the snapshot */}
+                                <div className="mb-3 p-3 bg-light rounded">
+                                    <p className="mb-2">
+                                        <i className="bi bi-info-circle me-2 text-info"></i>
+                                        <strong>Snapshot captured:</strong> {formatDate(selectedChange.createdAt)}
+                                    </p>
                                 </div>
 
-                                {selectedChange.screenshotBase64 && (
-                                    <div className="mb-3">
-                                        <h6>
-                                            <i className="bi bi-camera me-2" style={{ color: "#ec4899" }}></i>
-                                            Screenshot:
-                                        </h6>
-                                        <img
-                                            src={`data:${selectedChange.screenshotMimetype};base64,${selectedChange.screenshotBase64}`}
-                                            alt="Screenshot"
-                                            className="img-fluid border rounded"
-                                            style={{ maxHeight: "400px", width: "100%", objectFit: "contain" }}
-                                        />
-                                    </div>
-                                )}
+                                {/* Snapshot Content */}
+                                <div className="mb-3">
+                                    <h6 className="mb-2">
+                                        <i className="bi bi-file-text me-2"></i>
+                                        Snapshot Content
+                                    </h6>
+                                    {loadingSnapshot ? (
+                                        <div className="text-center py-3">
+                                            <div className="spinner-border spinner-border-sm" role="status">
+                                                <span className="visually-hidden">Loading...</span>
+                                            </div>
+                                            <span className="ms-2">Loading snapshot...</span>
+                                        </div>
+                                    ) : snapshotContent ? (
+                                        <div
+                                            className="border rounded p-3"
+                                            style={{
+                                                maxHeight: "400px",
+                                                overflowY: "auto",
+                                                // backgroundColor: "#f8f9fa",
+                                                fontFamily: "monospace",
+                                                fontSize: "0.875rem",
+                                                whiteSpace: "pre-wrap",
+                                                wordBreak: "break-word",
+                                            }}>
+                                            {snapshotContent}
+                                        </div>
+                                    ) : (
+                                        <div className="alert alert-warning">Failed to load snapshot content</div>
+                                    )}
+                                </div>
 
                                 <div className="d-flex gap-2 flex-wrap">
-                                    {selectedChange.watchUrl && (
-                                        <a
-                                            href={selectedChange.watchUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="btn btn-primary btn-sm">
-                                            <i className="bi bi-eye"></i>{" "}
-                                            <span className="d-none d-sm-inline">Watch URL</span>
-                                        </a>
-                                    )}
-                                    {selectedChange.diffUrl && (
-                                        <a
-                                            href={selectedChange.diffUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="btn btn-info btn-sm">
-                                            <i className="bi bi-file-diff"></i>{" "}
-                                            <span className="d-none d-sm-inline">View Diff</span>
-                                        </a>
-                                    )}
-                                    {selectedChange.editUrl && (
-                                        <a
-                                            href={selectedChange.editUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="btn btn-secondary btn-sm">
-                                            <i className="bi bi-pencil"></i>{" "}
-                                            <span className="d-none d-sm-inline">Edit</span>
-                                        </a>
-                                    )}
+                                    <a
+                                        href={`/api/snapshot/${watcher.id}/${selectedChange.id}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="btn btn-primary btn-sm">
+                                        <i className="bi bi-eye me-1"></i>
+                                        Open Snapshot in New Tab
+                                    </a>
+                                    <a
+                                        href={`/api/diff/${watcher.id}/${selectedChange.id}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="btn btn-info btn-sm">
+                                        <i className="bi bi-file-diff me-1"></i>
+                                        View Diff
+                                    </a>
+                                    <a
+                                        href={watcher.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="btn btn-secondary btn-sm">
+                                        <i className="bi bi-link-45deg me-1"></i>
+                                        Visit Site
+                                    </a>
                                 </div>
                             </div>
                         </div>

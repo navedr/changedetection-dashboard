@@ -8,7 +8,7 @@ import WatcherList from "./WatcherList";
 import ChangeHistory from "./ChangeHistory";
 
 const App = React.memo(() => {
-    const { params, setParam, clearParams } = useSearchParams<{ watcher: number }>();
+    const { params, setParam, clearParams } = useSearchParams<{ watcher: string }>();
 
     return (
         <ErrorBoundary>

@@ -1,33 +1,42 @@
 import React, { useState, useEffect } from "react";
 
 interface Watcher {
-    id: number;
+    id: string;
     url: string;
     title: string;
     createdAt: string;
     updatedAt: string;
     changeCount: number;
+    paused: boolean;
     latestChange: {
-        id: number;
+        id: string;
         createdAt: string;
-        message: string;
-        newValue?: string;
-        oldValue?: string;
+        timestamp: number;
+        size_total: number;
+        size_removed: number;
+        size_added: number;
     } | null;
 }
 
 interface WatcherListProps {
-    onSelectWatcher: (watcherId: number) => void;
+    onSelectWatcher: (watcherId: string) => void;
 }
 
 const WatcherList: React.FC<WatcherListProps> = ({ onSelectWatcher }) => {
     const [watchers, setWatchers] = useState<Watcher[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [snapshotPreviews, setSnapshotPreviews] = useState<{ [key: string]: string }>({});
 
     useEffect(() => {
         fetchWatchers();
     }, []);
+
+    useEffect(() => {
+        if (watchers.length > 0) {
+            fetchSnapshotPreviews();
+        }
+    }, [watchers]);
 
     const fetchWatchers = async () => {
         try {
@@ -46,7 +55,36 @@ const WatcherList: React.FC<WatcherListProps> = ({ onSelectWatcher }) => {
         }
     };
 
-    const deleteWatcher = async (watcherId: number, watcherTitle: string) => {
+    const fetchSnapshotPreviews = async () => {
+        // Fetch previews for first 10 watchers to avoid too many API calls
+        const watchersToFetch = watchers.slice(0, 10);
+
+        for (const watcher of watchersToFetch) {
+            // Skip if already fetched
+            if (snapshotPreviews[watcher.id]) {
+                continue;
+            }
+
+            try {
+                const response = await fetch(`/api/watchers/${watcher.id}/preview`);
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    if (data.preview) {
+                        setSnapshotPreviews(prev => ({
+                            ...prev,
+                            [watcher.id]: data.preview,
+                        }));
+                    }
+                }
+            } catch (err) {
+                // Silently handle errors - previews are optional
+            }
+        }
+    };
+
+    const deleteWatcher = async (watcherId: string, watcherTitle: string) => {
         if (
             !confirm(
                 `Are you sure you want to delete "${watcherTitle}"? This will also delete all associated change history.`,
@@ -104,7 +142,7 @@ const WatcherList: React.FC<WatcherListProps> = ({ onSelectWatcher }) => {
                         Monitoring {watchers.length} {watchers.length === 1 ? "site" : "sites"}
                     </small>
                 </div>
-                <button className="btn btn-light btn-sm" onClick={fetchWatchers}>
+                <button className="btn btn-dark btn-sm" onClick={fetchWatchers}>
                     <i className="bi bi-arrow-clockwise"></i> <span className="d-none d-sm-inline">Refresh</span>
                 </button>
             </div>
@@ -126,14 +164,18 @@ const WatcherList: React.FC<WatcherListProps> = ({ onSelectWatcher }) => {
                                     <h5 className="mb-1 text-truncate fs-6 fs-md-5">
                                         <i className="bi bi-globe2 me-2" style={{ color: "#6366f1" }}></i>
                                         {watcher.title}
+                                        {watcher.paused ? (
+                                            <i
+                                                className="bi bi-pause-circle-fill ms-2"
+                                                style={{ color: "#ef4444", fontSize: "0.9em" }}
+                                                title="Paused"></i>
+                                        ) : (
+                                            <i
+                                                className="bi bi-play-circle-fill ms-2"
+                                                style={{ color: "#10b981", fontSize: "0.9em" }}
+                                                title="Running"></i>
+                                        )}
                                     </h5>
-                                    <span
-                                        className={`badge ${
-                                            watcher.changeCount > 0 ? "bg-success" : "bg-secondary"
-                                        } text-nowrap`}>
-                                        <i className="bi bi-clock-history me-1"></i>
-                                        {watcher.changeCount} {watcher.changeCount === 1 ? "change" : "changes"}
-                                    </span>
                                 </div>
                                 <p
                                     className="mb-1 text-truncate small"
@@ -148,15 +190,22 @@ const WatcherList: React.FC<WatcherListProps> = ({ onSelectWatcher }) => {
                                 </p>
                                 {watcher.latestChange && (
                                     <>
-                                        {watcher.latestChange.newValue && (
+                                        {(watcher.latestChange.size_added > 0 ||
+                                            watcher.latestChange.size_removed > 0) && (
                                             <div className="mb-1">
                                                 <small className="text-muted d-block">
-                                                    <i
-                                                        className="bi bi-arrow-right-circle me-1"
-                                                        style={{ color: "#10b981" }}></i>
-                                                    <span style={{ color: "#34d399", fontWeight: "500" }}>
-                                                        Current: {watcher.latestChange.newValue}
-                                                    </span>
+                                                    {watcher.latestChange.size_added > 0 && (
+                                                        <span className="text-success me-2">
+                                                            <i className="bi bi-plus-circle me-1"></i>+
+                                                            {watcher.latestChange.size_added}
+                                                        </span>
+                                                    )}
+                                                    {watcher.latestChange.size_removed > 0 && (
+                                                        <span className="text-danger">
+                                                            <i className="bi bi-dash-circle me-1"></i>-
+                                                            {watcher.latestChange.size_removed}
+                                                        </span>
+                                                    )}
                                                 </small>
                                             </div>
                                         )}
@@ -165,6 +214,23 @@ const WatcherList: React.FC<WatcherListProps> = ({ onSelectWatcher }) => {
                                             Latest: {formatDate(watcher.latestChange.createdAt)}
                                         </small>
                                     </>
+                                )}
+                                {snapshotPreviews[watcher.id] && (
+                                    <div
+                                        className="mt-2 p-2 rounded small"
+                                        style={{
+                                            fontFamily: "monospace",
+                                            fontSize: "0.75rem",
+                                            backgroundColor: "rgba(0,0,0,0.05)",
+                                            whiteSpace: "pre-wrap",
+                                            wordBreak: "break-word",
+                                            maxHeight: "60px",
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            color: "white",
+                                        }}>
+                                        {snapshotPreviews[watcher.id]}
+                                    </div>
                                 )}
                             </div>
                             <button
