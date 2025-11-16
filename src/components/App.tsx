@@ -2,7 +2,7 @@ import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "notyf/notyf.min.css";
-// import "../styles/responsive.css";
+import "../styles/responsive.css";
 import { DryUXProvider, ErrorBoundary, useSearchParams } from "dry-ux";
 import WatcherList from "./WatcherList";
 import ChangeHistory from "./ChangeHistory";
@@ -21,7 +21,7 @@ const App = React.memo(() => {
                                     <i className="bi bi-speedometer2 me-2"></i>
                                     ChangeDetection.io Dashboard
                                 </h3>
-                                <small style={{ color: "rgba(0, 0, 0, 0.8)" }}>
+                                <small style={{ color: "rgba(255, 255, 255, 0.8)" }}>
                                     Monitor website changes in real-time
                                 </small>
                             </div>

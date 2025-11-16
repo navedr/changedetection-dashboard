@@ -11,6 +11,8 @@ interface Watcher {
         id: number;
         createdAt: string;
         message: string;
+        newValue?: string;
+        oldValue?: string;
     } | null;
 }
 
@@ -93,7 +95,7 @@ const WatcherList: React.FC<WatcherListProps> = ({ onSelectWatcher }) => {
 
     return (
         <div>
-            <div className="gradient-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                 <div>
                     <h2 className="fs-3 fs-md-2 mb-1" style={{ color: "white" }}>
                         <i className="bi bi-binoculars me-2"></i>Watchers
@@ -145,10 +147,24 @@ const WatcherList: React.FC<WatcherListProps> = ({ onSelectWatcher }) => {
                                     <small className="text-muted">{watcher.url}</small>
                                 </p>
                                 {watcher.latestChange && (
-                                    <small className="text-muted d-block">
-                                        <i className="bi bi-calendar-event me-1" style={{ color: "#f59e0b" }}></i>
-                                        Latest: {formatDate(watcher.latestChange.createdAt)}
-                                    </small>
+                                    <>
+                                        {watcher.latestChange.newValue && (
+                                            <div className="mb-1">
+                                                <small className="text-muted d-block">
+                                                    <i
+                                                        className="bi bi-arrow-right-circle me-1"
+                                                        style={{ color: "#10b981" }}></i>
+                                                    <span style={{ color: "#34d399", fontWeight: "500" }}>
+                                                        Current: {watcher.latestChange.newValue}
+                                                    </span>
+                                                </small>
+                                            </div>
+                                        )}
+                                        <small className="text-muted d-block">
+                                            <i className="bi bi-calendar-event me-1" style={{ color: "#f59e0b" }}></i>
+                                            Latest: {formatDate(watcher.latestChange.createdAt)}
+                                        </small>
+                                    </>
                                 )}
                             </div>
                             <button

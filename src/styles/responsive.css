@@ -28,15 +28,32 @@
 }
 
 /* Global Styles */
-body {
-    background: var(--darker-bg);
-    color: var(--text-primary);
+html {
+    background: var(--darker-bg) !important;
+}
+
+body,
+body.dark-mode {
+    background: var(--darker-bg) !important;
+    color: var(--text-primary) !important;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    min-height: 100vh;
+}
+
+#root {
+    background: var(--darker-bg);
+    min-height: 100vh;
+}
+
+/* Force dark mode on all Bootstrap components */
+.dark-mode * {
+    border-color: var(--border-color);
 }
 
 /* Container Styling */
 .container-fluid {
-    background: var(--darker-bg);
+    background: var(--darker-bg) !important;
+    color: var(--text-primary);
 }
 
 /* Custom Card Styling */
@@ -195,12 +212,27 @@ small {
     color: var(--text-secondary);
 }
 
+p, div, span {
+    color: var(--text-primary);
+}
+
+.text-truncate {
+    color: var(--text-primary);
+}
+
 /* Badge Styling */
 .badge {
     font-weight: 500;
     padding: 0.35em 0.65em;
 }
 
+.bg-success {
+    background: var(--success-color) !important;
+}
+
+.bg-secondary {
+    background: var(--card-bg) !important;
+}
 /* Links */
 a {
     color: var(--primary-light);
@@ -437,3 +469,6 @@ img {
     box-sizing: border-box;
 }
 
+.list-group-item-action:not(.active):focus, .list-group-item-action:not(.active):hover {
+    background-color: rgba(79, 70, 229, 0.15);
+}

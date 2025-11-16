@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface ChangeEvent {
     id: number;
@@ -61,16 +63,6 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
         return new Date(dateString).toLocaleString();
     };
 
-    const renderMarkdown = (text: string) => {
-        // Simple markdown rendering
-        let html = text
-            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-            .replace(/<del>(.*?)<\/del>/g, '<del class="text-danger">$1</del>')
-            .replace(/\n/g, "<br>");
-
-        return { __html: html };
-    };
-
     if (loading) {
         return (
             <div className="text-center py-5">
@@ -100,14 +92,20 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
                     <i className="bi bi-arrow-left"></i> <span className="d-none d-sm-inline">Back to Watchers</span>
                     <span className="d-inline d-sm-none">Back</span>
                 </button>
-                <div className="gradient-header">
+                <div>
                     <h2 className="fs-4 fs-md-3 mb-2" style={{ color: "white" }}>
                         <i className="bi bi-eye me-2"></i>
                         {watcher.title}
                     </h2>
                     <p
                         className="mb-0 small text-truncate"
-                        style={{ maxWidth: "100%", color: "rgba(255, 255, 255, 0.9)" }}>
+                        style={{
+                            maxWidth: "95%",
+                            textOverflow: "ellipsis",
+                            overflow: "hidden",
+                            whiteSpace: "nowrap",
+                            color: "rgba(255, 255, 255, 0.9)",
+                        }}>
                         <i className="bi bi-link-45deg me-1"></i>
                         <a
                             href={watcher.url}
@@ -156,7 +154,7 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
                         <div className="card">
                             <div className="card-header">
                                 <h5 className="mb-0">
-                                    <i className="bi bi-info-circle me-2" style={{ color: '#06b6d4' }}></i>
+                                    <i className="bi bi-info-circle me-2" style={{ color: "#06b6d4" }}></i>
                                     Change Details
                                 </h5>
                                 <small className="text-muted">
@@ -167,20 +165,12 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
                             <div className="card-body">
                                 {/* Value Comparison Section */}
                                 {(selectedChange.oldValue || selectedChange.newValue) && (
-                                    <div className="mb-4">
-                                        <h6 className="mb-3">
-                                            <i className="bi bi-arrow-left-right me-2" style={{ color: '#f59e0b' }}></i>
-                                            Value Change:
-                                        </h6>
+                                    <div className="mb-2">
                                         <div className="row g-2 g-md-3">
                                             {selectedChange.oldValue && (
-                                                <div className="col-12 col-md-6">
-                                                    <div className="card bg-light border-danger">
+                                                <div className="col-6">
+                                                    <div className="card bg-light border-danger mb-1">
                                                         <div className="card-body p-2 p-md-3">
-                                                            <small className="text-muted d-block mb-2">
-                                                                <i className="bi bi-dash-circle text-danger"></i> Old
-                                                                Value
-                                                            </small>
                                                             <div className="fs-5 fs-md-4 text-danger text-decoration-line-through">
                                                                 {selectedChange.oldValue}
                                                             </div>
@@ -189,13 +179,9 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
                                                 </div>
                                             )}
                                             {selectedChange.newValue && (
-                                                <div className="col-12 col-md-6">
+                                                <div className="col-6">
                                                     <div className="card bg-light border-success">
                                                         <div className="card-body p-2 p-md-3">
-                                                            <small className="text-muted d-block mb-2">
-                                                                <i className="bi bi-check-circle text-success"></i> New
-                                                                Value
-                                                            </small>
                                                             <div className="fs-5 fs-md-4 text-success fw-bold">
                                                                 {selectedChange.newValue}
                                                             </div>
@@ -208,17 +194,22 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ watcherId, onBack }) => {
                                 )}
 
                                 <div className="mb-3">
-                                    <h6>
-                                        <i className="bi bi-file-text me-2" style={{ color: '#3b82f6' }}></i>
-                                        Changes Detected:
-                                    </h6>
-                                    <div dangerouslySetInnerHTML={renderMarkdown(selectedChange.message)} />
+                                    <Markdown
+                                        remarkPlugins={[remarkGfm]}
+                                        components={{
+                                            a: ({ node, ...props }) => (
+                                                <a {...props} target="_blank" rel="noopener noreferrer" />
+                                            ),
+                                            h2: () => null,
+                                        }}>
+                                        {selectedChange.message}
+                                    </Markdown>
                                 </div>
 
                                 {selectedChange.screenshotBase64 && (
                                     <div className="mb-3">
                                         <h6>
-                                            <i className="bi bi-camera me-2" style={{ color: '#ec4899' }}></i>
+                                            <i className="bi bi-camera me-2" style={{ color: "#ec4899" }}></i>
                                             Screenshot:
                                         </h6>
                                         <img
