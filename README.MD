@@ -84,30 +84,6 @@ The dashboard supports optional password-based authentication:
 
 ---
 
-
-## Local Publish
-
-```shell
-  # Build with author and version information
-  docker build --platform linux/amd64 -t changedetection-dashboard .
-
-  # Tag for registry with author namespace
-  docker tag changedetection-dashboard 192.168.68.168:3030/changedetection-dashboard:latest
-
-  # Push to registry
-  docker push 192.168.68.168:3030/changedetection-dashboard:latest
-```
-
-## Local Build and Run
-```shell
-  docker build --platform linux/amd64 -t changedetection-dashboard . && \
-  docker run -p 8080:8080 \
-    -e CHANGEDETECTION_URL=http://your-changedetection-host:5000 \
-    -e CHANGEDETECTION_API_KEY=your-api-key-here \
-    -e PASSWORD=your_secure_password \
-    changedetection-dashboard
-```
-
 **Note**: The `PASSWORD` environment variable is optional. If not set, the dashboard will run without authentication.
 
 ## Using with Docker Compose
@@ -141,6 +117,37 @@ services:
     depends_on:
       - changedetection
 ```
+
+---
+
+## Docker Hub Integration
+
+This project includes automated Docker image building and publishing via GitHub Actions. Every push to the main branch automatically builds and pushes a new Docker image to Docker Hub.
+
+### Setting Up Docker Hub Publishing
+
+To enable automatic Docker image publishing, configure the following secrets in your GitHub repository:
+
+1. Go to your GitHub repository settings
+2. Navigate to **Settings** → **Secrets and variables** → **Actions**
+3. Add the following repository secrets:
+   - `DOCKERHUB_USERNAME`: Your Docker Hub username
+   - `DOCKERHUB_TOKEN`: Your Docker Hub access token ([Create one here](https://hub.docker.com/settings/security))
+
+### Published Images
+
+Once configured, Docker images are automatically published to:
+```
+docker pull <your-dockerhub-username>/changedetection-dashboard:latest
+```
+
+Tags are automatically generated for:
+- `latest` - Latest build from main branch
+- `<branch-name>` - Builds from specific branches
+- `v1.0.0` - Semantic version tags (when pushing version tags)
+- `v1.0`, `v1` - Major and minor version tags
+
+The workflow builds multi-architecture images supporting both `linux/amd64` and `linux/arm64`.
 
 ---
 
